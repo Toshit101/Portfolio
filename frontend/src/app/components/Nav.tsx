@@ -11,6 +11,9 @@ const NAV_LINKS = [
 
 const SECTIONS = ["about", "projects", "process", "contact"];
 
+// Height of the fixed header (h-16 = 64px) so sections don't land under it.
+const HEADER_OFFSET = 64;
+
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -40,8 +43,17 @@ export default function Nav() {
   const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const id = href.replace("#", "");
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    // Close the menu first; on mobile, tearing down the open menu in the same
+    // tick as scrollIntoView cancels the in-flight smooth scroll. Defer the
+    // scroll to the next frame and offset for the fixed header so the section
+    // heading isn't hidden underneath it.
     setMenuOpen(false);
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
+      window.scrollTo({ top, behavior: "smooth" });
+    });
   };
 
   return (
